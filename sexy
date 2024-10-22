@@ -81,135 +81,132 @@ Output
 When you run the program, it will display the frequent 2-itemsets along with their counts, based on the provided transactions. You can modify the transactions array to use your dataset.
 
 
-// Simplified K-means Clustering in C:
+// Experiment No. 08: Implementation of Clustering algorithm (K-means)
+
+// Program:
 #include <stdio.h>
 #include <math.h>
-
 #define MAX_POINTS 100
 #define MAX_CLUSTERS 10
-
-typedef struct {
-    double x, y;   // Coordinates of the point
-    int cluster;   // Assigned cluster number
-} Point;
-
-typedef struct {
-    double x, y;   // Coordinates of the centroid
-} Centroid;
-
-double distance(double x1, double y1, double x2, double y2) {
-    return sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+// Function to calculate the distance between two numbers
+float distance(float a, float b) {
+    return fabs(a - b);
 }
-
-void kMeans(Point points[], Centroid centroids[], int num_points, int K, int max_iterations) {
-    int changed, iterations = 0;
-
-    // Repeat until no point changes its cluster or max iterations are reached
-    do {
-        changed = 0;
-
-        // Assign points to nearest centroid
+// Function to assign each point to the nearest cluster
+void assign_clusters(float points[], int num_points, float centroids[], int k, int clusters[]) {
+    for (int i = 0; i < num_points; i++) {
+        float min_dist = distance(points[i], centroids[0]);
+        clusters[i] = 0;  // Assign to the first cluster initially
+         for (int j = 1; j < k; j++) {
+            float dist = distance(points[i], centroids[j]);
+            if (dist < min_dist) {
+                min_dist = dist;
+                clusters[i] = j;  // Reassign to the closest cluster
+            }
+         } 
+    }
+}
+// Function to update the centroids of clusters by calculating the mean of all points in each cluster
+void update_centroids(float points[], int num_points, float centroids[], int k, int clusters[]) {
+    float sum[MAX_CLUSTERS] = {0};
+    int count[MAX_CLUSTERS] = {0};
+ for (int i = 0; i < num_points; i++) {
+        int cluster = clusters[i];
+        sum[cluster] += points[i];
+        count[cluster]++;
+    }
+     for (int j = 0; j < k; j++) {
+        if (count[j] != 0) {
+            centroids[j] = sum[j] / count[j];
+        }
+    }
+}
+// Function to check if the clusters have changed between iterations
+int clusters_changed(int old_clusters[], int new_clusters[], int num_points) {
+    for (int i = 0; i < num_points; i++) {
+        if (old_clusters[i] != new_clusters[i]) {
+            return 1;  // Clusters have changed
+        }
+    }
+    return 0;  // Clusters have not change }
+// Function to print the current state of clusters and centroids in each iteration
+void print_clusters(float points[], int num_points, int clusters[], float centroids[], int k, int iteration) {
+    printf("\nClusters after iteration %d:\n", iteration);
+    for (int j = 0; j < k; j++) {
+        printf("Cluster %d: ", j);
         for (int i = 0; i < num_points; i++) {
-            int nearest_centroid = 0;
-            double min_dist = distance(points[i].x, points[i].y, centroids[0].x, centroids[0].y);
-
-            for (int j = 1; j < K; j++) {
-                double dist = distance(points[i].x, points[i].y, centroids[j].x, centroids[j].y);
-                if (dist < min_dist) {
-                    min_dist = dist;
-                    nearest_centroid = j;
+            if (clusters[i] == j) {
+                printf("%.2f ", points[i]);
+            }    }
+        printf("\n");
+    } // Print centroids (means) after each iteration
+    printf("Centroids after iteration %d:\n", iteration);
+    for (int j = 0; j < k; j++) {
+        printf("Centroid %d -> %.2f\n", j, centroids[j]);
+    }
+}
+// Function to print the final clusters in a single line format
+void print_final_clusters(float points[], int num_points, int clusters[], int k) {
+    printf("\nFinal Clusters:\n");
+    for (int j = 0; j < k; j++) {
+        printf("Cluster %d -> ", j);
+        int first = 1;
+        for (int i = 0; i < num_points; i++) {
+            if (clusters[i] == j) {
+                if (!first) {
+                    printf(", ");
                 }
-            }
-
-            // Check if the point's cluster changes
-            if (points[i].cluster != nearest_centroid) {
-                points[i].cluster = nearest_centroid;
-                changed = 1;
+                printf("%.2f", points[i]);
+                first = 0;
             }
         }
-
-        // Update centroids
-        double sumX[MAX_CLUSTERS] = {0}, sumY[MAX_CLUSTERS] = {0};
-        int count[MAX_CLUSTERS] = {0};
-
-        for (int i = 0; i < num_points; i++) {
-            int cluster = points[i].cluster;
-            sumX[cluster] += points[i].x;
-            sumY[cluster] += points[i].y;
-            count[cluster]++;
-        }
-
-        for (int j = 0; j < K; j++) {
-            if (count[j] != 0) {
-                centroids[j].x = sumX[j] / count[j];
-                centroids[j].y = sumY[j] / count[j];
-            }
-        }
-
-        iterations++;
-    } while (changed && iterations < max_iterations);
+        printf("\n");
+    }
 }
-
 int main() {
-    int num_points, K, max_iterations = 100;
-    Point points[MAX_POINTS];
-    Centroid centroids[MAX_CLUSTERS];
+    int num_points, k;
+    float points[MAX_POINTS], centroids[MAX_CLUSTERS];
+    int clusters[MAX_POINTS], old_clusters[MAX_POINTS];
 
-    // Input number of points and clusters
+    // Input number of points
     printf("Enter the number of points: ");
     scanf("%d", &num_points);
-    printf("Enter the number of clusters (K): ");
-    scanf("%d", &K);
-
-    // Input points' coordinates
-    printf("Enter the coordinates of the points (x y):\n");
+    // Input points
+    printf("Enter the points:\n");
     for (int i = 0; i < num_points; i++) {
-        scanf("%lf %lf", &points[i].x, &points[i].y);
-        points[i].cluster = -1;  // Initially, no cluster is assigned
+        scanf("%f", &points[i]);
     }
-
-    // Initialize centroids with the first K points
-    for (int i = 0; i < K; i++) {
-        centroids[i].x = points[i].x;
-        centroids[i].y = points[i].y;
+  // Input number of clusters
+    printf("Enter the number of clusters: ");
+    scanf("%d", &k);
+  // Input initial centroids   printf("Enter the initial centroids:\n");
+    for (int i = 0; i < k; i++) {
+        scanf("%f", &centroids[i]);
     }
-
-    // Run K-means clustering
-    kMeans(points, centroids, num_points, K, max_iterations);
-
-    // Output the clusters
-    printf("\nCluster assignments:\n");
+  // Initialize clusters and old_clusters arrays
     for (int i = 0; i < num_points; i++) {
-        printf("Point (%.2lf, %.2lf) is in Cluster %d\n", points[i].x, points[i].y, points[i].cluster);
+        clusters[i] = -1;
+        old_clusters[i] = -1;
     }
-
-    // Output the centroids
-    printf("\nCentroids:\n");
-    for (int i = 0; i < K; i++) {
-        printf("Centroid %d: (%.2lf, %.2lf)\n", i, centroids[i].x, centroids[i].y);
-    }
-
-    return 0;
+  // k-means clustering iterations
+    int iterations = 0;
+    do {
+        // Assign points to the nearest clusters
+        assign_clusters(points, num_points, centroids, k, clusters);
+        print_clusters(points, num_points, clusters, centroids, k, iterations);
+        update_centroids(points, num_points, centroids, k, clusters);
+        if (!clusters_changed(old_clusters, clusters, num_points)) {
+            break;
+        } // Copy current clusters to old_clusters for the next iteration comparison
+for (int i = 0; i < num_points; i++) {
+            old_clusters[i] = clusters[i];
+        }
+           iterations++;
+    } while (1);
+    print_final_clusters(points, num_points, clusters, k);
+// Output final centroids
+    printf("\nFinal Centroids:\n");
+    for (int i = 0; i < k; i++) {
+        printf("Centroid %d -> %.2f\n", i, centroids[i]);
+    } return 0;
 }
-
-
-Example Run:
-Enter the number of points: 4
-Enter the number of clusters (K): 2
-Enter the coordinates of the points (x y):
-1 1
-2 1
-4 5
-5 4
-
-Cluster assignments:
-Point (1.00, 1.00) is in Cluster 0
-Point (2.00, 1.00) is in Cluster 0
-Point (4.00, 5.00) is in Cluster 1
-Point (5.00, 4.00) is in Cluster 1
-
-Centroids:
-Centroid 0: (1.50, 1.00)
-Centroid 1: (4.50, 4.50)
-
-
