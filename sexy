@@ -1,0 +1,215 @@
+// To write a program to find frequent 2-itemset in given dataset for minimum support count =2.
+
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_TRANSACTIONS 100
+#define MAX_ITEMS 10
+#define MAX_ITEM_NAME_LENGTH 20
+
+// Structure to store itemsets and their counts
+typedef struct {
+    char item1[MAX_ITEM_NAME_LENGTH];
+    char item2[MAX_ITEM_NAME_LENGTH];
+    int count;
+} Itemset;
+
+int main() {
+    // Sample dataset: list of transactions
+    char transactions[MAX_TRANSACTIONS][MAX_ITEMS][MAX_ITEM_NAME_LENGTH] = {
+        {"milk", "bread", "butter"},
+        {"bread", "diaper", "beer", "egg"},
+        {"milk", "diaper", "beer", "cola"},
+        {"milk", "bread", "diaper", "butter"},
+        {"bread", "milk", "diaper", "beer"}
+    };
+    
+    int num_transactions = 5; // Number of transactions
+    Itemset itemsets[MAX_ITEMS * MAX_ITEMS]; // Store itemsets
+    int itemset_count = 0; // Number of 2-itemsets
+    int min_support_count = 2;
+
+    // Step 1: Count occurrences of each 2-itemset
+    for (int i = 0; i < num_transactions; i++) {
+        for (int j = 0; j < MAX_ITEMS && strlen(transactions[i][j]) > 0; j++) {
+            for (int k = j + 1; k < MAX_ITEMS && strlen(transactions[i][k]) > 0; k++) {
+                // Create itemset
+                Itemset new_itemset;
+                strcpy(new_itemset.item1, transactions[i][j]);
+                strcpy(new_itemset.item2, transactions[i][k]);
+                new_itemset.count = 1;
+
+                // Check if itemset already exists
+                int found = 0;
+                for (int l = 0; l < itemset_count; l++) {
+                    if (strcmp(itemsets[l].item1, new_itemset.item1) == 0 &&
+                        strcmp(itemsets[l].item2, new_itemset.item2) == 0) {
+                        itemsets[l].count++;
+                        found = 1;
+                        break;
+                    }
+                }
+
+                // If itemset does not exist, add it
+                if (!found) {
+                    itemsets[itemset_count++] = new_itemset;
+                }
+            }
+        }
+    }
+
+    // Step 2: Print frequent itemsets
+    printf("Frequent 2-itemsets with minimum support count of %d:\n", min_support_count);
+    for (int i = 0; i < itemset_count; i++) {
+        if (itemsets[i].count >= min_support_count) {
+            printf("{%s, %s}: %d\n", itemsets[i].item1, itemsets[i].item2, itemsets[i].count);
+        }
+    }
+
+    return 0;
+}
+Compilation and Execution
+To compile and run this program:
+1.	Save the code to a file named frequent_itemsets.c.
+2.	Open a terminal and navigate to the directory where the file is located.
+3.	Compile the program using:
+gcc -o frequent_itemsets frequent_itemsets.c
+4.	Run the program:
+./frequent_itemsets
+
+Output
+When you run the program, it will display the frequent 2-itemsets along with their counts, based on the provided transactions. You can modify the transactions array to use your dataset.
+
+
+// Simplified K-means Clustering in C:
+#include <stdio.h>
+#include <math.h>
+
+#define MAX_POINTS 100
+#define MAX_CLUSTERS 10
+
+typedef struct {
+    double x, y;   // Coordinates of the point
+    int cluster;   // Assigned cluster number
+} Point;
+
+typedef struct {
+    double x, y;   // Coordinates of the centroid
+} Centroid;
+
+double distance(double x1, double y1, double x2, double y2) {
+    return sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+}
+
+void kMeans(Point points[], Centroid centroids[], int num_points, int K, int max_iterations) {
+    int changed, iterations = 0;
+
+    // Repeat until no point changes its cluster or max iterations are reached
+    do {
+        changed = 0;
+
+        // Assign points to nearest centroid
+        for (int i = 0; i < num_points; i++) {
+            int nearest_centroid = 0;
+            double min_dist = distance(points[i].x, points[i].y, centroids[0].x, centroids[0].y);
+
+            for (int j = 1; j < K; j++) {
+                double dist = distance(points[i].x, points[i].y, centroids[j].x, centroids[j].y);
+                if (dist < min_dist) {
+                    min_dist = dist;
+                    nearest_centroid = j;
+                }
+            }
+
+            // Check if the point's cluster changes
+            if (points[i].cluster != nearest_centroid) {
+                points[i].cluster = nearest_centroid;
+                changed = 1;
+            }
+        }
+
+        // Update centroids
+        double sumX[MAX_CLUSTERS] = {0}, sumY[MAX_CLUSTERS] = {0};
+        int count[MAX_CLUSTERS] = {0};
+
+        for (int i = 0; i < num_points; i++) {
+            int cluster = points[i].cluster;
+            sumX[cluster] += points[i].x;
+            sumY[cluster] += points[i].y;
+            count[cluster]++;
+        }
+
+        for (int j = 0; j < K; j++) {
+            if (count[j] != 0) {
+                centroids[j].x = sumX[j] / count[j];
+                centroids[j].y = sumY[j] / count[j];
+            }
+        }
+
+        iterations++;
+    } while (changed && iterations < max_iterations);
+}
+
+int main() {
+    int num_points, K, max_iterations = 100;
+    Point points[MAX_POINTS];
+    Centroid centroids[MAX_CLUSTERS];
+
+    // Input number of points and clusters
+    printf("Enter the number of points: ");
+    scanf("%d", &num_points);
+    printf("Enter the number of clusters (K): ");
+    scanf("%d", &K);
+
+    // Input points' coordinates
+    printf("Enter the coordinates of the points (x y):\n");
+    for (int i = 0; i < num_points; i++) {
+        scanf("%lf %lf", &points[i].x, &points[i].y);
+        points[i].cluster = -1;  // Initially, no cluster is assigned
+    }
+
+    // Initialize centroids with the first K points
+    for (int i = 0; i < K; i++) {
+        centroids[i].x = points[i].x;
+        centroids[i].y = points[i].y;
+    }
+
+    // Run K-means clustering
+    kMeans(points, centroids, num_points, K, max_iterations);
+
+    // Output the clusters
+    printf("\nCluster assignments:\n");
+    for (int i = 0; i < num_points; i++) {
+        printf("Point (%.2lf, %.2lf) is in Cluster %d\n", points[i].x, points[i].y, points[i].cluster);
+    }
+
+    // Output the centroids
+    printf("\nCentroids:\n");
+    for (int i = 0; i < K; i++) {
+        printf("Centroid %d: (%.2lf, %.2lf)\n", i, centroids[i].x, centroids[i].y);
+    }
+
+    return 0;
+}
+
+
+Example Run:
+Enter the number of points: 4
+Enter the number of clusters (K): 2
+Enter the coordinates of the points (x y):
+1 1
+2 1
+4 5
+5 4
+
+Cluster assignments:
+Point (1.00, 1.00) is in Cluster 0
+Point (2.00, 1.00) is in Cluster 0
+Point (4.00, 5.00) is in Cluster 1
+Point (5.00, 4.00) is in Cluster 1
+
+Centroids:
+Centroid 0: (1.50, 1.00)
+Centroid 1: (4.50, 4.50)
+
+
